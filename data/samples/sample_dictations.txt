@@ -1,0 +1,15 @@
+# Synthetic dictations (no real patient data). One scene per paragraph.
+
+Started an IV at 10:40. Gave epi 1 mg IV at 10:42, aspirin 324 mg PO at 10:44. Defibrillated 200 J at 10:46.
+
+Patient in respiratory distress. Oxygen 15 L/min via non-rebreather at 14:02. Salbutamol 5 mg neb at 14:05. Gave 500 ml normal saline IV at 14:10.
+
+Road traffic accident. C-collar applied at 09:12. Tourniquet applied at 09:14. Gave fentanyl 50 mcg IV at 09:18 and ondansetron 4 mg IV at 09:20.
+
+Suspected overdose. Naloxone 2 mg intranasal at 22:30. Bag valve mask ventilation at 22:31. Repeat naloxone 2 mg IM at 22:36.
+
+Deliberately messy examples (should produce review flags, never silent guesses):
+gave morphin 5 mg IV
+patient refused aspirin
+gave epinephrine 10 mg IV at 11:00
+gave aspirin 324 mg IV at 11:05

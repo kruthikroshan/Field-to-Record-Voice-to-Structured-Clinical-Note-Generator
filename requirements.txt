@@ -1,0 +1,7 @@
+flask>=3.0
+reportlab>=4.0
+pytest>=8.0
+# Optional offline speech recognition:
+faster-whisper>=1.0
+av<19
+# vosk>=0.3.45

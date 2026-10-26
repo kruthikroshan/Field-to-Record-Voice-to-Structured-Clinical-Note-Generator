@@ -1,0 +1,33 @@
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local database and output data
+data/incidents/
+data/mock_ehr/
+demo_output/
+
+# Temporary and media files
+*.log
+*.wav
+*.mp3
+*.ogg
+*.webm
+*.pdf
+
+# Operating system artifacts
+.DS_Store
+Thumbs.db
