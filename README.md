@@ -3,13 +3,20 @@
 **Jatayu Season 6 · Use Case: Field-to-Record · Team Codecrafters**  
 **Authors**: Ojha Architha · Adina Isran · Godishala Kruthik Roshan  
 
+[![Live Demo](https://img.shields.io/badge/Live%20App-Firebase%20Hosting-blue?style=for-the-badge&logo=firebase&logoColor=white)](https://fieldscribe-voice-to-text.web.app)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/kruthikroshan/Field-to-Record-Voice-to-Structured-Clinical-Note-Generator)
 [![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 [![Standards](https://img.shields.io/badge/Interoperability-HL7%20FHIR%20R4-orange.svg)](https://hl7.org/fhir/)
 [![Security](https://img.shields.io/badge/Integrity-SHA--256%20Audit%20Chain-teal.svg)](#cryptographic-audit-chain)
 [![Tests](https://img.shields.io/badge/Tests-24%20Passed-brightgreen.svg)](#running-tests)
 
+> **🚀 Live Web Deployment**: [https://fieldscribe-voice-to-text.web.app](https://fieldscribe-voice-to-text.web.app)  
+> **💻 Source Code Repository**: [https://github.com/kruthikroshan/Field-to-Record-Voice-to-Structured-Clinical-Note-Generator](https://github.com/kruthikroshan/Field-to-Record-Voice-to-Structured-Clinical-Note-Generator)  
+> **🔥 Firebase Project Console**: [https://console.firebase.google.com/project/fieldscribe-voice-to-text/overview](https://console.firebase.google.com/project/fieldscribe-voice-to-text/overview)
+
 ---
+
 
 ## 📌 Executive Summary
 
@@ -226,17 +233,22 @@ gcloud run deploy fieldscribe \
   --timeout 300
 ```
 
-### 3. Connect to Firebase Hosting
-1. Login to Firebase:
+### 3. Deploy to Firebase Hosting
+1. Login to Firebase CLI:
    ```bash
-   firebase login
+   npx firebase-tools login
    ```
-2. Initialize and deploy:
+2. Set active account and project:
    ```bash
-   firebase use --add <YOUR_FIREBASE_PROJECT_ID>
-   firebase deploy --only hosting
+   npx firebase-tools login:use 2303A52339@sru.edu.in
+   npx firebase-tools use --add fieldscribe-voice-to-text
    ```
-Your app will be live on your custom Firebase domain (`https://<project-id>.web.app`), seamlessly serving static assets through Firebase CDN and routing all backend inference/APIs to Cloud Run.
+3. Deploy static web suite:
+   ```bash
+   npx firebase-tools deploy --only hosting
+   ```
+Your app is live and globally accessible at: **[https://fieldscribe-voice-to-text.web.app](https://fieldscribe-voice-to-text.web.app)** (Console: [https://console.firebase.google.com/project/fieldscribe-voice-to-text/overview](https://console.firebase.google.com/project/fieldscribe-voice-to-text/overview)).
+
 
 ## 📂 Project Directory Structure
 
