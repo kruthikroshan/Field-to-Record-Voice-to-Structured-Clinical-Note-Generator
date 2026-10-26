@@ -1,0 +1,1822 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FieldScribe | Offline Voice-to-Structured Clinical Note Generator</title>
+<style>
+  :root {
+    --primary: #0d9488;
+    --primary-hover: #0f766e;
+    --primary-light: #f0fdfa;
+    --primary-border: #99f6e4;
+    --navy-950: #0a1120;
+    --navy-900: #0f172a;
+    --navy-800: #1e293b;
+    --navy-700: #334155;
+    --navy-100: #e2e8f0;
+    --navy-50: #f8fafc;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --card-bg: #ffffff;
+    --emerald-bg: #ecfdf5;
+    --emerald-text: #065f46;
+    --emerald-border: #a7f3d0;
+    --amber-bg: #fffbeb;
+    --amber-text: #92400e;
+    --amber-border: #fde68a;
+    --rose-bg: #fff1f2;
+    --rose-text: #9f1239;
+    --rose-border: #fecdd3;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background: #f1f5f9;
+    color: var(--text-main);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  header {
+    background: linear-gradient(135deg, #0a1322 0%, #0f1f38 100%);
+    color: #fff;
+    padding: 16px 28px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .brand-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .brand-icon {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, #0d9488 0%, #10b981 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 15px rgba(13, 148, 136, 0.4);
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .brand-icon svg { width: 24px; height: 24px; }
+  .brand-text h1 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .brand-text p {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-top: 1px;
+  }
+  .status-pills {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .pill-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 8px #10b981;
+    display: inline-block;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  }
+
+  /* Main Container */
+  main {
+    max-width: 1200px;
+    margin: 24px auto 48px;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .card:hover {
+    box-shadow: var(--shadow-md);
+  }
+  .card-header {
+    padding: 16px 24px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .step-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--primary);
+    background: var(--primary-light);
+    border: 1px solid var(--primary-border);
+    padding: 3px 10px;
+    border-radius: 6px;
+  }
+  .card-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--navy-900);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-body {
+    padding: 22px 24px;
+  }
+
+  /* Input Mode Tabs */
+  .mode-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 18px;
+    padding-bottom: 0;
+  }
+  .mode-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: transparent;
+    color: var(--text-muted);
+    border: 0;
+    border-bottom: 3px solid transparent;
+    border-radius: 6px 6px 0 0;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: -2px;
+    transition: all 0.15s ease;
+  }
+  .mode-tab-btn:hover {
+    color: var(--primary-hover);
+    background: rgba(13, 148, 136, 0.04);
+  }
+  .mode-tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    background: rgba(13, 148, 136, 0.06);
+  }
+  .mode-tab-btn svg { width: 17px; height: 17px; }
+
+  /* Preset Scenarios */
+  .preset-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .preset-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .preset-btn {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    background: var(--navy-50);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--navy-700);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .preset-btn:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-border);
+    color: var(--primary-hover);
+  }
+
+  /* Quick Manual Typing Snippet Bar */
+  .snippet-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .snippet-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--navy-700);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .snippet-chip {
+    font-size: 11.5px;
+    font-weight: 500;
+    padding: 3px 8px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    color: var(--navy-800);
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .snippet-chip:hover {
+    background: #e0f2fe;
+    border-color: #38bdf8;
+    color: #0369a1;
+  }
+  .snippet-chip.time-chip {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #065f46;
+  }
+  .snippet-chip.clear-chip {
+    margin-left: auto;
+    color: #e11d48;
+    border-color: #fecdd3;
+  }
+  .snippet-chip.clear-chip:hover {
+    background: #fff1f2;
+  }
+
+  /* Textarea */
+  .textarea-wrap {
+    position: relative;
+    margin-bottom: 16px;
+  }
+  textarea {
+    width: 100%;
+    min-height: 125px;
+    font-family: inherit;
+    font-size: 14.5px;
+    line-height: 1.6;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: #ffffff;
+    color: var(--navy-900);
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+  }
+
+  /* Direct Manual Entry Form Container */
+  .direct-manual-panel {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .manual-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    align-items: flex-end;
+  }
+  .form-group-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .form-group-item label {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--navy-700);
+    letter-spacing: 0.04em;
+  }
+  .form-group-item input, .form-group-item select {
+    font-family: inherit;
+    font-size: 13.5px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: #ffffff;
+    color: var(--navy-900);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-group-item input:focus, .form-group-item select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.12);
+  }
+
+  /* Audio Zone */
+  .audio-zone {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .audio-controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .file-input-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+  }
+  .file-input-wrapper input[type=file] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+  }
+  .btn-upload {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    color: var(--navy-700);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn-upload:hover {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+  }
+  .file-name-tag {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Mic Live Recording Button */
+  .btn-mic {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    border: 1px solid #fecdd3;
+    color: #e11d48;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn-mic:hover {
+    background: #fff1f2;
+    border-color: #fda4af;
+  }
+  .btn-mic.recording {
+    background: #e11d48;
+    color: #ffffff;
+    border-color: #be123c;
+    animation: pulse-red 1.5s infinite;
+  }
+  @keyframes pulse-red {
+    0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.5); }
+    70% { box-shadow: 0 0 0 8px rgba(225, 29, 72, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+  }
+
+  /* Audio Player Card */
+  .audio-player-box {
+    display: none;
+    align-items: center;
+    gap: 14px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: var(--radius-sm);
+    padding: 8px 14px;
+  }
+  .audio-player-box.active {
+    display: flex;
+  }
+  .audio-player-box audio {
+    height: 32px;
+    outline: none;
+    flex-grow: 1;
+    max-width: 420px;
+  }
+
+  /* Action Buttons */
+  button {
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    border: 0;
+    border-radius: var(--radius-sm);
+    padding: 9px 18px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s ease;
+  }
+  button svg { width: 16px; height: 16px; }
+  .btn-primary {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(13, 148, 136, 0.25);
+  }
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+    box-shadow: 0 4px 8px rgba(13, 148, 136, 0.35);
+    transform: translateY(-1px);
+  }
+  .btn-secondary {
+    background: #ffffff;
+    color: var(--navy-800);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-secondary:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: var(--navy-900);
+  }
+  .btn-outline-primary {
+    background: #ffffff;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+  }
+  .btn-outline-primary:hover {
+    background: var(--primary-light);
+    color: var(--primary-hover);
+  }
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 12.5px;
+  }
+  button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Metadata Grid */
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-light);
+  }
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .input-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--navy-700);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .input-group input {
+    font-family: inherit;
+    font-size: 13.5px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: #ffffff;
+    color: var(--navy-900);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .input-group input:focus {
+    border-color: var(--primary);
+  }
+
+  /* Feedback Message */
+  .feedback-msg {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 20px;
+  }
+  .feedback-msg.active {
+    color: var(--primary-hover);
+    font-weight: 500;
+  }
+
+  /* Table Styles */
+  .table-responsive {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    background: #ffffff;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    text-align: left;
+  }
+  th {
+    background: #f8fafc;
+    color: var(--navy-800);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+  tbody tr:hover {
+    background: #f8fafc;
+  }
+  tr.flag {
+    background: #fffdf5;
+  }
+  tr.flag:hover {
+    background: #fffbeb;
+  }
+
+  /* Form Elements in Table */
+  td input[type=text], td input[type=number], td select {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: #ffffff;
+    color: var(--navy-900);
+    width: 100%;
+    box-sizing: border-box;
+    outline: none;
+  }
+  td input[type=text]:focus, td input[type=number]:focus, td select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.1);
+  }
+  td select {
+    cursor: pointer;
+  }
+
+  /* Row Delete Button */
+  .btn-row-del {
+    background: transparent;
+    border: 0;
+    color: #94a3b8;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 16px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-row-del:hover {
+    color: #e11d48;
+    background: #ffe4e6;
+  }
+
+  /* Custom Checkbox */
+  .custom-checkbox {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: #f1f5f9;
+    color: var(--navy-700);
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+    margin: 1px;
+  }
+  .badge.w {
+    background: var(--amber-bg);
+    color: var(--amber-text);
+    border-color: var(--amber-border);
+  }
+  .badge.b {
+    background: var(--rose-bg);
+    color: var(--rose-text);
+    border-color: var(--rose-border);
+  }
+  .badge.ok {
+    background: var(--emerald-bg);
+    color: var(--emerald-text);
+    border-color: var(--emerald-border);
+  }
+  .kind-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+  .kind-badge.medication {
+    background: #e0f2fe;
+    color: #0369a1;
+  }
+  .kind-badge.procedure {
+    background: #f3e8ff;
+    color: #7e22ce;
+  }
+
+  /* Audit Chain Section */
+  .audit-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+    background: var(--emerald-bg);
+    border: 1px solid var(--emerald-border);
+    color: var(--emerald-text);
+  }
+  .audit-banner.bad {
+    background: var(--rose-bg);
+    border-color: var(--rose-border);
+    color: var(--rose-text);
+  }
+  .audit-banner-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .audit-banner.bad .audit-banner-icon {
+    color: #e11d48;
+  }
+  .audit-banner h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .audit-banner p {
+    font-size: 13px;
+    opacity: 0.9;
+  }
+
+  .hash {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: var(--navy-700);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hash-text {
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .btn-copy {
+    background: transparent;
+    border: 0;
+    padding: 2px 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  .btn-copy:hover {
+    color: var(--primary);
+    background: #e2e8f0;
+  }
+
+  .action-buttons-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  a.action-link {
+    text-decoration: none;
+  }
+
+  .hidden { display: none !important; }
+
+  /* Modal for FHIR Inspection */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  .modal-card {
+    background: #ffffff;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 800px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .modal-header {
+    padding: 16px 24px;
+    background: #0f172a;
+    color: #ffffff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+    padding: 4px;
+  }
+  .btn-close:hover {
+    color: #ffffff;
+  }
+  .modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    background: #0b1120;
+  }
+  .modal-body pre {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 13px;
+    color: #38bdf8;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.5;
+  }
+  .modal-footer {
+    padding: 14px 24px;
+    background: #f8fafc;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  @media (max-width: 768px) {
+    .header-inner { flex-direction: column; align-items: flex-start; }
+    .card-header { flex-direction: column; align-items: flex-start; }
+    .meta-grid { grid-template-columns: 1fr; }
+    .manual-form-grid { grid-template-columns: 1fr; }
+    .audio-controls-bar { flex-direction: column; align-items: flex-start; }
+    .action-buttons-grid { flex-direction: column; }
+    .action-buttons-grid button, a.action-link { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand-group">
+      <div class="brand-icon">
+        <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v6m-3-3h6"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>FieldScribe <span>Clinical Suite</span></h1>
+        <p>Offline Voice &amp; Manual Text Note Generator · Cryptographic SHA-256 Audit Chain</p>
+      </div>
+    </div>
+    <div class="status-pills">
+      <div class="pill">
+        <span class="pill-pulse"></span>
+        <span>Offline Secure Node</span>
+      </div>
+      <div class="pill">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15a3 3 0 01-3-3V4.5a3 3 0 116 0v7.5a3 3 0 01-3 3z"/>
+        </svg>
+        <span>ASR: <strong style="color:#10b981;">faster-whisper, vosk (Active)</strong></span>
+      </div>
+      <div class="pill">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
+        </svg>
+        <span>FHIR R4 / HL7</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Step 1: Input & Capture -->
+  <section class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <span class="step-badge">Step 1</span>
+        <span>Clinical On-Scene Capture (Voice &amp; Manual Typing)</span>
+      </div>
+      <span style="font-size:12px; color:var(--text-muted);">
+        Type free text, insert rapid clinical shortcuts, dictate voice, or use direct structured fields.
+      </span>
+    </div>
+    <div class="card-body">
+      <!-- Mode Tabs (Voice/Free-text vs Direct Structured Form) -->
+      <div class="mode-tabs">
+        <button type="button" class="mode-tab-btn active" id="tab-btn-text" onclick="switchInputMode('text')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/>
+          </svg>
+          <span>✍️ Manual Text &amp; Voice Note</span>
+        </button>
+        <button type="button" class="mode-tab-btn" id="tab-btn-form" onclick="switchInputMode('form')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z"/>
+          </svg>
+          <span>📋 Direct Structured Entry Form</span>
+        </button>
+      </div>
+
+      <!-- Mode 1: Free Text & Voice Area -->
+      <div id="mode-text-panel">
+        <!-- Quick Demo Presets -->
+        <div class="preset-row">
+          <span class="preset-label">Quick Scenarios:</span>
+          <button type="button" class="preset-btn" onclick="loadPreset('cardiac')">🚑 Cardiac Arrest (Epi + Defib)</button>
+          <button type="button" class="preset-btn" onclick="loadPreset('trauma')">🩹 Trauma (Morphine + IV)</button>
+          <button type="button" class="preset-btn" onclick="loadPreset('refusal')">⚠️ Refusal (Aspirin refused)</button>
+        </div>
+
+        <!-- Rapid Manual Text Snippets -->
+        <div class="snippet-bar">
+          <span class="snippet-label">Quick Snippets:</span>
+          <button type="button" class="snippet-chip time-chip" onclick="insertSnippet('time')">⏱️ + Current Time</button>
+          <button type="button" class="snippet-chip" onclick="insertSnippet('Started an IV at ')">+ IV Access</button>
+          <button type="button" class="snippet-chip" onclick="insertSnippet('Gave epi 1 mg IV at ')">+ Epi 1 mg IV</button>
+          <button type="button" class="snippet-chip" onclick="insertSnippet('Gave aspirin 324 mg PO at ')">+ Aspirin 324 mg PO</button>
+          <button type="button" class="snippet-chip" onclick="insertSnippet('Administered morphine 4 mg IV at ')">+ Morphine 4 mg IV</button>
+          <button type="button" class="snippet-chip" onclick="insertSnippet('Defibrillated 200 J at ')">+ Defib 200 J</button>
+          <button type="button" class="snippet-chip" onclick="insertSnippet('Administered normal saline 500 ml IV at ')">+ Normal Saline</button>
+          <button type="button" class="snippet-chip" onclick="insertSnippet('Given oxygen 4 l via nasal cannula at ')">+ Oxygen 4 L</button>
+          <button type="button" class="snippet-chip clear-chip" onclick="clearNote()">✕ Clear Note</button>
+        </div>
+
+        <div class="textarea-wrap">
+          <textarea id="note" placeholder='Manually type your clinical notes or click quick snippets above, e.g. "Started an IV at 10:40. Gave epi 1 mg IV at 10:42, aspirin 324 mg PO at 10:44. Defibrillated 200 J at 10:46."'></textarea>
+        </div>
+
+        <!-- Audio Capture Bar (Optional Offline Voice) -->
+        <div class="audio-zone">
+          <div class="audio-controls-bar">
+            <!-- Live Mic Record Button -->
+            <button type="button" id="mic-record" class="btn-mic" title="Record directly from microphone">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15a3 3 0 01-3-3V4.5a3 3 0 116 0v7.5a3 3 0 01-3 3z"/>
+              </svg>
+              <span id="mic-label">Record Voice</span>
+            </button>
+
+            <!-- File Upload Button -->
+            <div class="file-input-wrapper">
+              <div class="btn-upload">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+                </svg>
+                <span>Upload Audio</span>
+              </div>
+              <input type="file" id="audio" accept="audio/*">
+            </div>
+            <span id="audio-filename" class="file-name-tag">No audio selected</span>
+
+            <!-- Transcribe Button -->
+            <button type="button" id="transcribe" class="btn-secondary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/>
+              </svg>
+              <span>Transcribe to Text Box</span>
+            </button>
+          </div>
+
+          <!-- Embedded Audio Player -->
+          <div id="audio-preview-row" class="audio-player-box">
+            <span style="font-size:12px; font-weight:700; color:var(--primary); text-transform:uppercase;">Audio Preview:</span>
+            <audio id="audio-player" controls></audio>
+          </div>
+        </div>
+
+        <!-- Extract Button -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:8px;">
+          <button type="button" id="parse" class="btn-primary" style="padding:11px 24px; font-size:14px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/>
+            </svg>
+            <span>Extract Clinical Entities from Text</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mode 2: Direct Structured Form Panel -->
+      <div id="mode-form-panel" class="hidden">
+        <div class="direct-manual-panel">
+          <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:13px; font-weight:700; color:var(--navy-900);">Quick Direct Manual Entry</span>
+            <span style="font-size:12px; color:var(--text-muted);">Fill in structured fields directly without writing freeform text</span>
+          </div>
+
+          <div class="manual-form-grid">
+            <div class="form-group-item" style="max-width:140px;">
+              <label for="man-kind">Entry Type</label>
+              <select id="man-kind" onchange="toggleManualKind()">
+                <option value="medication">Medication</option>
+                <option value="procedure">Procedure</option>
+              </select>
+            </div>
+
+            <div class="form-group-item" style="flex:2; min-width:180px;">
+              <label for="man-name">Item Name</label>
+              <input id="man-name" placeholder="e.g. Epinephrine, Morphine, IV access, Defibrillation" list="common-drugs">
+              <datalist id="common-drugs">
+                <option value="Epinephrine">
+                <option value="Aspirin">
+                <option value="Morphine">
+                <option value="Albuterol">
+                <option value="Nitroglycerin">
+                <option value="Naloxone">
+                <option value="Amiodarone">
+                <option value="Atropine">
+                <option value="IV access">
+                <option value="Defibrillation">
+                <option value="Intubation">
+                <option value="Tourniquet">
+              </datalist>
+            </div>
+
+            <div class="form-group-item" id="man-dose-group" style="max-width:110px;">
+              <label for="man-dose">Dose Value</label>
+              <input id="man-dose" type="number" step="any" placeholder="e.g. 1">
+            </div>
+
+            <div class="form-group-item" id="man-unit-group" style="max-width:100px;">
+              <label for="man-unit">Unit</label>
+              <select id="man-unit">
+                <option value="mg">mg</option>
+                <option value="mcg">mcg</option>
+                <option value="g">g</option>
+                <option value="ml">ml</option>
+                <option value="l">l</option>
+                <option value="units">units</option>
+              </select>
+            </div>
+
+            <div class="form-group-item" id="man-route-group" style="max-width:100px;">
+              <label for="man-route">Route</label>
+              <select id="man-route">
+                <option value="IV">IV</option>
+                <option value="IM">IM</option>
+                <option value="IO">IO</option>
+                <option value="PO">PO</option>
+                <option value="SL">SL</option>
+                <option value="IN">IN</option>
+                <option value="NEB">NEB</option>
+                <option value="SC">SC</option>
+              </select>
+            </div>
+
+            <div class="form-group-item" style="max-width:100px;">
+              <label for="man-time">Time</label>
+              <input id="man-time" placeholder="HH:MM" style="text-align:center;">
+            </div>
+
+            <div class="form-group-item" style="min-width:140px;">
+              <label>&nbsp;</label>
+              <button type="button" class="btn-primary" onclick="submitDirectManualEntry()" style="height:38px; justify-content:center;">
+                <span>+ Add to Record</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Incident Metadata Grid -->
+      <div class="meta-grid">
+        <div class="input-group">
+          <label for="responder">Responder Identifier</label>
+          <input id="responder" value="Medic 12" placeholder="e.g. Paramedic 42">
+        </div>
+        <div class="input-group">
+          <label for="patient">Patient De-identified Label</label>
+          <input id="patient" value="Patient A" placeholder="e.g. Patient A">
+        </div>
+        <div class="input-group">
+          <label for="incident">Incident ID (Auto-generated if empty)</label>
+          <input id="incident" placeholder="e.g. INC-2026-001">
+        </div>
+      </div>
+
+      <p id="msg" class="feedback-msg"></p>
+    </div>
+  </section>
+
+  <!-- Step 2: Clinical Entity Verification -->
+  <section class="card hidden" id="review">
+    <div class="card-header">
+      <div class="card-title">
+        <span class="step-badge">Step 2</span>
+        <span>Review &amp; Edit Clinical Entities</span>
+      </div>
+      <!-- Add Manual Item Quick Actions -->
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button type="button" class="btn-secondary btn-sm" onclick="addManualRow('medication')">
+          <span>+ Add Medication</span>
+        </button>
+        <button type="button" class="btn-secondary btn-sm" onclick="addManualRow('procedure')">
+          <span>+ Add Procedure</span>
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px; text-align:center;">Include</th>
+              <th style="width:100px;">Type</th>
+              <th>Clinical Item</th>
+              <th style="width:90px;">Dose</th>
+              <th style="width:90px;">Unit</th>
+              <th style="width:90px;">Route</th>
+              <th style="width:85px;">Time</th>
+              <th style="width:75px;">Confidence</th>
+              <th>Safety Flags &amp; Validation</th>
+              <th style="width:40px; text-align:center;">Del</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:20px;">
+        <p style="font-size:13px; color:var(--text-muted);">
+          You can edit any field above or click "+ Add Medication" / "+ Add Procedure" to manually add items.
+        </p>
+        <button type="button" id="commit" class="btn-primary" style="padding:11px 24px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
+          </svg>
+          <span>Confirm &amp; Commit to Audit Chain</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Step 3: Cryptographic Ledger & Exports -->
+  <section class="card hidden" id="result">
+    <div class="card-header">
+      <div class="card-title">
+        <span class="step-badge">Step 3</span>
+        <span>Cryptographic Audit Ledger &amp; Export Center</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <!-- Verification Banner -->
+      <div id="verdict"></div>
+
+      <!-- Ledger Table -->
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:50px; text-align:center;">Block #</th>
+              <th style="width:190px;">Recorded Timestamp (UTC)</th>
+              <th>Clinical Payload Summary</th>
+              <th>SHA-256 Hash</th>
+            </tr>
+          </thead>
+          <tbody id="chain"></tbody>
+        </table>
+      </div>
+
+      <!-- Actions -->
+      <div class="action-buttons-grid">
+        <a id="pdf" target="_blank" class="action-link">
+          <button type="button" class="btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+            </svg>
+            <span>Open PDF Clinical Note</span>
+          </button>
+        </a>
+
+        <button type="button" id="btn-view-fhir" class="btn-secondary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/>
+          </svg>
+          <span>Inspect FHIR-lite JSON</span>
+        </button>
+
+        <a id="fhir" target="_blank" class="action-link" style="display:none;"></a>
+
+        <button type="button" id="verify" class="btn-secondary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+          </svg>
+          <span>Re-verify Cryptographic Chain</span>
+        </button>
+
+        <button type="button" id="sync" class="btn-outline-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/>
+          </svg>
+          <span>Sync to Hospital EHR (Store &amp; Forward)</span>
+        </button>
+      </div>
+
+      <p id="syncmsg" class="feedback-msg" style="margin-top:14px;"></p>
+    </div>
+  </section>
+</main>
+
+<!-- In-App FHIR Inspector Modal -->
+<div id="fhir-modal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/>
+        </svg>
+        <span>FHIR-lite Clinical Bundle (JSON)</span>
+      </h3>
+      <button type="button" class="btn-close" onclick="closeFhirModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <pre id="fhir-code">Loading...</pre>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary" onclick="copyFhirJson()">Copy JSON</button>
+      <button type="button" class="btn-primary" onclick="closeFhirModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let parsed = [];
+let incidentId = null;
+const ROUTES = ['', 'IV', 'IM', 'IO', 'PO', 'SL', 'IN', 'NEB', 'SC', 'PR'];
+const UNITS = ['', 'mg', 'mcg', 'g', 'ml', 'l', 'units'];
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+function sel(opts, val) {
+  return '<select>' + opts.map(o => `<option ${o === (val || '') ? 'selected' : ''}>${o}</option>`).join('') + '</select>';
+}
+
+async function api(url, opt) {
+  const r = await fetch(url, opt);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+
+function getCurTime() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+// Preset loader
+function loadPreset(key) {
+  const noteEl = $('#note');
+  if (key === 'cardiac') {
+    noteEl.value = 'Started an IV at 10:40. Gave epi 1 mg IV at 10:42, aspirin 324 mg PO at 10:44. Defibrillated 200 J at 10:46.';
+  } else if (key === 'trauma') {
+    noteEl.value = 'Placed IO line in right tibia at 08:15. Administered morphine 4 mg IV at 08:18. Applied tourniquet to right leg at 08:20.';
+  } else if (key === 'refusal') {
+    noteEl.value = 'Patient disoriented. Attempted aspirin 324 mg PO at 14:10 but patient refused aspirin. Administered oxygen 4 l via nasal cannula at 14:12.';
+  }
+  $('#msg').textContent = 'Preset loaded. Click "Extract Clinical Entities from Text" to process.';
+  $('#msg').className = 'feedback-msg active';
+}
+
+// Quick Snippet Inserter
+function insertSnippet(text) {
+  const note = $('#note');
+  const curTime = getCurTime();
+  const toInsert = text === 'time' ? curTime + ' ' : text.includes('at ') ? text + curTime + '. ' : text + ' ';
+  const start = note.selectionStart;
+  const end = note.selectionEnd;
+  const val = note.value;
+  note.value = val.substring(0, start) + toInsert + val.substring(end);
+  note.focus();
+  note.selectionStart = note.selectionEnd = start + toInsert.length;
+}
+
+function clearNote() {
+  $('#note').value = '';
+  $('#note').focus();
+}
+
+// Tab Mode Switching
+function switchInputMode(mode) {
+  if (mode === 'text') {
+    $('#tab-btn-text').classList.add('active');
+    $('#tab-btn-form').classList.remove('active');
+    $('#mode-text-panel').classList.remove('hidden');
+    $('#mode-form-panel').classList.add('hidden');
+  } else {
+    $('#tab-btn-form').classList.add('active');
+    $('#tab-btn-text').classList.remove('active');
+    $('#mode-form-panel').classList.remove('hidden');
+    $('#mode-text-panel').classList.add('hidden');
+    if (!$('#man-time').value) $('#man-time').value = getCurTime();
+  }
+}
+
+function toggleManualKind() {
+  const kind = $('#man-kind').value;
+  const isMed = kind === 'medication';
+  $('#man-dose-group').style.display = isMed ? 'flex' : 'none';
+  $('#man-unit-group').style.display = isMed ? 'flex' : 'none';
+  $('#man-route-group').style.display = isMed ? 'flex' : 'none';
+  if (!isMed) {
+    $('#man-name').placeholder = 'e.g. IV access, Defibrillation, Intubation, Tourniquet';
+  } else {
+    $('#man-name').placeholder = 'e.g. Epinephrine, Morphine, Aspirin, Albuterol';
+  }
+}
+
+// Submit Direct Manual Entry
+function submitDirectManualEntry() {
+  const kind = $('#man-kind').value;
+  const name = $('#man-name').value.trim();
+  if (!name) {
+    alert('Please enter an item name (e.g. Epinephrine, Defibrillation).');
+    return;
+  }
+  const isMed = kind === 'medication';
+  const doseVal = isMed && $('#man-dose').value !== '' ? parseFloat($('#man-dose').value) : null;
+  const doseUnit = isMed ? $('#man-unit').value : null;
+  const route = isMed ? $('#man-route').value : null;
+  const time = $('#man-time').value.trim() || getCurTime();
+
+  parsed.push({
+    kind: kind,
+    name: name,
+    dose_value: doseVal,
+    dose_unit: doseUnit,
+    route: route,
+    time: time,
+    details: {},
+    source_text: 'Manual entry',
+    confidence: 1.0,
+    flags: []
+  });
+
+  // Reset form inputs
+  $('#man-name').value = '';
+  $('#man-dose').value = '';
+  renderRows();
+  $('#review').classList.remove('hidden');
+  $('#review').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('#msg').textContent = `Added "${name}" manually to clinical list.`;
+  $('#msg').className = 'feedback-msg active';
+}
+
+// Add manual row directly in Step 2 table
+function addManualRow(kind = 'medication') {
+  parsed.push({
+    kind: kind,
+    name: '',
+    dose_value: kind === 'medication' ? 1.0 : null,
+    dose_unit: kind === 'medication' ? 'mg' : null,
+    route: kind === 'medication' ? 'IV' : null,
+    time: getCurTime(),
+    details: {},
+    source_text: 'Manual table entry',
+    confidence: 1.0,
+    flags: []
+  });
+  renderRows();
+  $('#review').classList.remove('hidden');
+  const rows = document.querySelectorAll('#rows tr');
+  if (rows.length) {
+    const lastRow = rows[rows.length - 1];
+    const nameInput = lastRow.querySelector('.name');
+    if (nameInput) nameInput.focus();
+  }
+}
+
+function deleteRow(idx) {
+  parsed.splice(idx, 1);
+  renderRows();
+  if (!parsed.length) {
+    $('#review').classList.add('hidden');
+  }
+}
+
+// Extract entries
+$('#parse').onclick = async () => {
+  const noteVal = $('#note').value.trim();
+  if (!noteVal) {
+    alert('Please type or dictate a note first, or use the "Direct Structured Entry Form" tab.');
+    return;
+  }
+  const btn = $('#parse');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span>Extracting Entities...</span>';
+  try {
+    const j = await api('/api/parse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: noteVal })
+    });
+    parsed = j.entries;
+    const msgText = (j.warnings || []).join(' ') || `Successfully extracted ${parsed.length} clinical entr${parsed.length === 1 ? 'y' : 'ies'}.`;
+    $('#msg').textContent = msgText;
+    $('#msg').className = 'feedback-msg active';
+    renderRows();
+    $('#review').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) {
+    $('#msg').textContent = 'Extraction failed: ' + e.message;
+    $('#msg').className = 'feedback-msg';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+};
+
+function renderRows() {
+  $('#review').classList.toggle('hidden', !parsed.length);
+  $('#rows').innerHTML = parsed.map((e, i) => {
+    const med = e.kind === 'medication';
+    const det = Object.entries(e.details || {}).map(([k, v]) => `${k}=${v}`).join('; ');
+    const fl = e.flags.map(f => {
+      const cls = ['DOSE_OUT_OF_RANGE', 'NEGATION_SUSPECTED'].includes(f) ? 'b' :
+                  ['UNIT_MISMATCH', 'LOW_CONFIDENCE', 'TIME_MISSING', 'ROUTE_MISSING', 'FUZZY_NAME'].includes(f) ? 'w' : '';
+      return `<span class="badge ${cls}">${f}</span>`;
+    }).join('') || '<span class="badge ok">✓ Verified</span>';
+
+    const confPct = Math.round((e.confidence || 0) * 100);
+    const confColor = confPct >= 85 ? '#059669' : confPct >= 65 ? '#d97706' : '#dc2626';
+
+    return `<tr class="${e.flags.length ? 'flag' : ''}" data-i="${i}">
+      <td style="text-align:center;"><input type="checkbox" class="custom-checkbox use" ${e.flags.includes('NEGATION_SUSPECTED') ? '' : 'checked'}></td>
+      <td><span class="kind-badge ${e.kind}">${e.kind}</span></td>
+      <td>
+        <input type="text" class="name" value="${esc(e.name)}" placeholder="Item name..." style="font-weight:600;">
+        ${det ? '<div style="font-size:11.5px; color:var(--text-muted); margin-top:3px;">' + esc(det) + '</div>' : ''}
+      </td>
+      <td>${med ? `<input type="number" step="any" class="dv" value="${e.dose_value ?? ''}" placeholder="Dose">` : ''}</td>
+      <td>${med ? sel(UNITS, e.dose_unit).replace('<select>', '<select class="du">') : ''}</td>
+      <td>${med ? sel(ROUTES, e.route).replace('<select>', '<select class="rt">') : ''}</td>
+      <td><input type="text" class="tm" value="${e.time || ''}" placeholder="HH:MM" size="6" style="text-align:center;"></td>
+      <td style="font-weight:600; color:${confColor};">${confPct}%</td>
+      <td>${fl}</td>
+      <td style="text-align:center;">
+        <button type="button" class="btn-row-del" onclick="deleteRow(${i})" title="Remove item">&times;</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// Commit to audit chain
+$('#commit').onclick = async () => {
+  const out = [];
+  document.querySelectorAll('#rows tr').forEach(tr => {
+    if (!tr.querySelector('.use').checked) return;
+    const o = structuredClone(parsed[+tr.dataset.i]);
+    const n = tr.querySelector('.name').value.trim();
+    if (!n) return;
+    const dv = tr.querySelector('.dv'), du = tr.querySelector('.du'), rt = tr.querySelector('.rt'), tm = tr.querySelector('.tm').value.trim();
+    const before = JSON.stringify([o.name, o.dose_value, o.dose_unit, o.route, o.time]);
+    o.name = n;
+    if (dv) {
+      o.dose_value = dv.value === '' ? null : parseFloat(dv.value);
+      o.dose_unit = du.value || null;
+      o.route = rt.value || null;
+    }
+    o.time = tm || null;
+    o.edited = before !== JSON.stringify([o.name, o.dose_value, o.dose_unit, o.route, o.time]);
+    out.push(o);
+  });
+
+  if (!out.length) {
+    alert('Please check at least one clinical entry (with an item name) to add to the audit chain.');
+    return;
+  }
+
+  const btn = $('#commit');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span>Hashing &amp; Securing to Chain...</span>';
+
+  try {
+    const j = await api('/api/commit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        incident_id: $('#incident').value.trim() || incidentId,
+        responder: $('#responder').value,
+        patient_label: $('#patient').value,
+        entries: out
+      })
+    });
+    incidentId = j.incident.incident_id;
+    $('#incident').value = incidentId;
+    showChain(j.incident, j.chain_ok);
+    $('#review').classList.add('hidden');
+    $('#note').value = '';
+    parsed = [];
+    $('#msg').textContent = `Incident ${incidentId} locked into SHA-256 audit ledger.`;
+    $('#msg').className = 'feedback-msg active';
+    $('#result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) {
+    alert('Error committing to chain: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+};
+
+function showChain(inc, ok) {
+  $('#result').classList.remove('hidden');
+  $('#verdict').innerHTML = ok
+    ? `<div class="audit-banner">
+        <div class="audit-banner-icon" style="color:#059669;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Cryptographic Audit Chain Intact · 0 Tampering Detected</h3>
+          <p>All ${inc.chain.length} blocks mathematically verified against genesis hash. First link in clinical chain secured.</p>
+        </div>
+      </div>`
+    : `<div class="audit-banner bad">
+        <div class="audit-banner-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+          </svg>
+        </div>
+        <div>
+          <h3>WARNING: Cryptographic Tampering Detected</h3>
+          <p>Block payload or hash integrity check failed. Ledger signature mismatch.</p>
+        </div>
+      </div>`;
+
+  $('#chain').innerHTML = inc.chain.map(l => `
+    <tr>
+      <td style="text-align:center; font-weight:700; color:var(--primary);">#${l.index + 1}</td>
+      <td style="color:var(--text-muted); font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px;">${l.recorded_at}</td>
+      <td>
+        <span style="font-weight:600; color:var(--navy-900);">${esc(l.payload.name)}</span>
+        ${l.payload.dose_value != null ? ` <span style="color:var(--primary-hover); font-weight:600;">${l.payload.dose_value} ${(l.payload.dose_unit || '')}</span>` : ''}
+        ${l.payload.route ? ` <span class="badge">${l.payload.route}</span>` : ''}
+        ${l.payload.time ? ` <span style="font-size:12px; color:var(--text-muted);">@ ${l.payload.time}</span>` : ''}
+        ${l.payload.edited ? ` <span class="badge w">edited</span>` : ''}
+      </td>
+      <td>
+        <div class="hash">
+          <span class="hash-text" title="${l.hash}">${l.hash}</span>
+          <button type="button" class="btn-copy" onclick="copyText('${l.hash}')" title="Copy SHA-256 hash">Copy</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  $('#pdf').href = `/incident/${inc.incident_id}.pdf`;
+  $('#fhir').href = `/api/incident/${inc.incident_id}/fhir`;
+}
+
+// Re-verify
+$('#verify').onclick = async () => {
+  const btn = $('#verify');
+  btn.disabled = true;
+  try {
+    const j = await api('/api/incident/' + incidentId);
+    showChain(j.incident, j.chain_ok);
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+// Sync to hospital EHR
+$('#sync').onclick = async () => {
+  const btn = $('#sync');
+  btn.disabled = true;
+  $('#syncmsg').textContent = 'Connecting to hospital EHR endpoint...';
+  try {
+    const j = await api('/api/sync/' + incidentId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: 'mock' })
+    });
+    $('#syncmsg').innerHTML = `<span style="color:#059669; font-weight:600;">✓ ${j.message}</span>`;
+  } catch (e) {
+    $('#syncmsg').innerHTML = `<span style="color:#e11d48; font-weight:600;">⚠️ ${e.message}</span>`;
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+// Audio File Selection & Player
+$('#audio').onchange = (e) => {
+  const f = e.target.files[0];
+  const playerBox = $('#audio-preview-row');
+  const player = $('#audio-player');
+  const nameSpan = $('#audio-filename');
+  if (f) {
+    player.src = URL.createObjectURL(f);
+    nameSpan.textContent = `${f.name} (${(f.size / 1024).toFixed(1)} KB)`;
+    playerBox.classList.add('active');
+    $('#msg').textContent = `Audio loaded. Press ▶ to listen, or click "Transcribe to Text Box".`;
+    $('#msg').className = 'feedback-msg active';
+  } else {
+    playerBox.classList.remove('active');
+    nameSpan.textContent = 'No audio selected';
+    player.src = '';
+  }
+};
+
+// Transcribe Button
+$('#transcribe').onclick = async () => {
+  const f = $('#audio').files[0];
+  if (!f) {
+    alert('Please select or record an audio file first.');
+    return;
+  }
+  const btn = $('#transcribe');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span>Transcribing (Whisper)...</span>';
+  $('#msg').textContent = 'Transcribing with local faster-whisper neural model...';
+  $('#msg').className = 'feedback-msg active';
+
+  const fd = new FormData();
+  fd.append('audio', f);
+
+  try {
+    const j = await api('/api/transcribe', { method: 'POST', body: fd });
+    $('#note').value = j.text;
+    $('#msg').textContent = 'Transcription complete! Review the clinical text, then click "Extract Clinical Entities from Text".';
+    $('#msg').className = 'feedback-msg active';
+  } catch (e) {
+    $('#msg').textContent = 'Transcription failed: ' + e.message;
+    $('#msg').className = 'feedback-msg';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+};
+
+// Live Microphone Recording
+let mediaRecorder = null;
+let audioChunks = [];
+let recordInterval = null;
+let recordSeconds = 0;
+
+$('#mic-record').onclick = async () => {
+  const micBtn = $('#mic-record');
+  const micLabel = $('#mic-label');
+
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    // Stop recording
+    mediaRecorder.stop();
+    clearInterval(recordInterval);
+    micBtn.classList.remove('recording');
+    micLabel.textContent = 'Record Voice';
+    return;
+  }
+
+  // Start recording
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    alert('Audio recording is not supported in this browser or environment.');
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioChunks = [];
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' :
+                     MediaRecorder.isTypeSupported('audio/ogg') ? 'audio/ogg' : '';
+    mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = e => {
+      if (e.data.size > 0) audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      const ext = (mediaRecorder.mimeType && mediaRecorder.mimeType.includes('ogg')) ? 'ogg' : 'webm';
+      const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+      const file = new File([audioBlob], `voice_dictation.${ext}`, { type: audioBlob.type });
+
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      $('#audio').files = dt.files;
+      $('#audio').dispatchEvent(new Event('change'));
+
+      $('#msg').textContent = 'Microphone recording captured. Click "Transcribe to Text Box" to process with Whisper.';
+      $('#msg').className = 'feedback-msg active';
+    };
+
+    mediaRecorder.start();
+    micBtn.classList.add('recording');
+    recordSeconds = 0;
+    recordInterval = setInterval(() => {
+      recordSeconds++;
+      const m = String(Math.floor(recordSeconds / 60)).padStart(2, '0');
+      const s = String(recordSeconds % 60).padStart(2, '0');
+      micLabel.textContent = `Stop (${m}:${s})`;
+    }, 1000);
+    micLabel.textContent = 'Stop (00:00)';
+    $('#msg').textContent = 'Recording microphone... Speak your clinical observations.';
+    $('#msg').className = 'feedback-msg active';
+
+  } catch (err) {
+    alert('Could not access microphone: ' + err.message);
+  }
+};
+
+// In-app FHIR Inspector Modal
+$('#btn-view-fhir').onclick = async () => {
+  if (!incidentId) return;
+  const modal = $('#fhir-modal');
+  const codeEl = $('#fhir-code');
+  modal.classList.remove('hidden');
+  codeEl.textContent = 'Fetching FHIR Bundle from server...';
+  try {
+    const r = await fetch(`/api/incident/${incidentId}/fhir`);
+    const j = await r.json();
+    codeEl.textContent = JSON.stringify(j, null, 2);
+  } catch (e) {
+    codeEl.textContent = 'Error loading FHIR: ' + e.message;
+  }
+};
+
+function closeFhirModal() {
+  $('#fhir-modal').classList.add('hidden');
+}
+
+function copyFhirJson() {
+  const code = $('#fhir-code').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    alert('FHIR JSON copied to clipboard!');
+  });
+}
+
+function copyText(txt) {
+  navigator.clipboard.writeText(txt).then(() => {
+    alert('SHA-256 Hash copied!');
+  });
+}
+</script>
+
+<!-- Firebase App & Analytics SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC_hYKgtJ5UP8tfrVoIjKxjWFBTNUbFVtg",
+    authDomain: "fieldscribe-voice-to-text.firebaseapp.com",
+    projectId: "fieldscribe-voice-to-text",
+    storageBucket: "fieldscribe-voice-to-text.firebasestorage.app",
+    messagingSenderId: "975440017246",
+    appId: "1:975440017246:web:6803f667ccfea08a3141cf",
+    measurementId: "G-ZGK5SYE9RQ"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(fbApp);
+  window.fbApp = fbApp;
+</script>
+
+</body>
+</html>

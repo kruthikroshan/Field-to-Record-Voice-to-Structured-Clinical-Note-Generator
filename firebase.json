@@ -9,10 +9,7 @@
     "rewrites": [
       {
         "source": "**",
-        "run": {
-          "serviceId": "fieldscribe",
-          "region": "us-central1"
-        }
+        "destination": "/index.html"
       }
     ]
   }
