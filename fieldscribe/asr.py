@@ -5,6 +5,7 @@ Backends (first available wins):
   2. vosk            (pip install vosk; set VOSK_MODEL_PATH to a downloaded model folder)
 """
 from __future__ import annotations
+import importlib.util
 import json
 import wave
 
@@ -23,8 +24,7 @@ def available_backends() -> list[str]:
     except Exception:
         pass
     try:
-        import vosk  # noqa: F401
-        if config.VOSK_MODEL_PATH:
+        if importlib.util.find_spec("vosk") is not None and config.VOSK_MODEL_PATH:
             found.append("vosk")
     except Exception:
         pass
@@ -51,7 +51,7 @@ def transcribe(audio_path: str) -> str:
                                                       "IV, IM, intubated, defibrillated, normal saline.")
         return " ".join(s.text.strip() for s in segments).strip()
     if "vosk" in backends:
-        import vosk
+        vosk = importlib.import_module("vosk")
         wf = wave.open(audio_path, "rb")
         rec = vosk.KaldiRecognizer(vosk.Model(config.VOSK_MODEL_PATH), wf.getframerate())
         parts = []
