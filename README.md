@@ -205,6 +205,39 @@ python evaluation/evaluate.py
 
 ---
 
+## ☁️ Deployment (Firebase Hosting & Google Cloud Run)
+
+FieldScribe is configured for production deployment using **Google Cloud Run** connected directly to **Firebase Hosting**:
+
+### 1. Prerequisites
+- [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) (`gcloud`) installed
+- [Firebase CLI](https://firebase.google.com/docs/cli) (`firebase-tools`) installed
+
+### 2. Deploy Container to Cloud Run
+From the project root:
+```bash
+gcloud run deploy fieldscribe \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --platform managed \
+  --memory 2Gi \
+  --cpu 2 \
+  --timeout 300
+```
+
+### 3. Connect to Firebase Hosting
+1. Login to Firebase:
+   ```bash
+   firebase login
+   ```
+2. Initialize and deploy:
+   ```bash
+   firebase use --add <YOUR_FIREBASE_PROJECT_ID>
+   firebase deploy --only hosting
+   ```
+Your app will be live on your custom Firebase domain (`https://<project-id>.web.app`), seamlessly serving static assets through Firebase CDN and routing all backend inference/APIs to Cloud Run.
+
 ## 📂 Project Directory Structure
 
 ```
