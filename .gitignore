@@ -31,3 +31,6 @@ demo_output/
 # Operating system artifacts
 .DS_Store
 Thumbs.db
+
+# Firebase cache
+.firebase/
